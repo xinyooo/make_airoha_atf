@@ -1,0 +1,40 @@
+# ----------------------------------------------------------------------------
+# make_airoha_atf - generated artifacts that must NOT be committed.
+# ----------------------------------------------------------------------------
+
+# Final pipeline outputs (bl2.bin, bl31.lzma, intermediate flash_table.bin/lzma).
+build/
+out/
+
+# Host flash_table tool produced by src/flash_table/Makefile.
+src/flash_table/flash_table_gen
+src/flash_table/*.o
+src/flash_table/*.a
+src/flash_table/flash_table.bin
+src/flash_table/flash_table.lzma
+
+# trx tool intermediates if rebuilt via `make trx_build`.
+tools/trx/*.o
+tools/trx/*.a
+
+# Generic build noise.
+*.o
+*.a
+*.so
+*.lo
+*.la
+*.tmp
+*.swp
+*~
+.DS_Store
+
+# Editor / IDE.
+.vscode/
+.idea/
+*.iml
+.cache/
+compile_commands.json
+
+# Python helpers (if anyone adds tooling later).
+__pycache__/
+*.py[cod]
