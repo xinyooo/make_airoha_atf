@@ -60,6 +60,9 @@ endif
 .PHONY: all bl2 bl31 flash_table trx_build clean distclean help \
 	check-bl2-inputs check-bl31-inputs
 
+# Source files that determine whether the prebuilt trx binary is stale.
+TRX_SRC := $(TOOLS_DIR)/trx/trx.c $(TOOLS_DIR)/trx/trx.h $(TOOLS_DIR)/trx/Makefile
+
 all: bl2 bl31
 
 help:
@@ -111,10 +114,13 @@ flash_table: $(FLASH_TABLE_GEN)
 $(FLASH_TABLE_GEN):
 	$(Q)$(MAKE) -C $(FLASH_TABLE_DIR) TOP_DIR=$(TOP_DIR)
 
-# Rebuilds the trx tool from source. The repository ships a prebuilt binary,
-# so this target is only needed when the prebuilt one is incompatible with
-# the build host.
-trx_build:
+# Rebuilds the trx tool from source. Anyone who edits trx.c / trx.h /
+# tools/trx/Makefile gets a fresh binary on the next build because the
+# real $(TRX) target below depends on $(TRX_SRC). The prebuilt binary in
+# git is kept around so first-time builds on a fresh checkout still work,
+# but it is overwritten as soon as the source is touched.
+trx_build $(TRX): $(TRX_SRC)
+	$(Q)$(MAKE) -C $(TOOLS_DIR)/trx clean
 	$(Q)$(MAKE) -C $(TOOLS_DIR)/trx \
 		TCSUPPORT_OPENWRT=$(TCSUPPORT_OPENWRT) \
 		TCSUPPORT_LITTLE_ENDIAN=$(TCSUPPORT_LITTLE_ENDIAN) \
@@ -149,8 +155,10 @@ bl2: check-bl2-inputs $(BL2_BIN)
 
 # Combine the four input segments into bl2.bin and append the CRC trailer
 # expected by BootROM. Intermediate flash_table artifacts are removed once
-# they have been folded into the final image.
-$(BL2_BIN): $(FLASH_TABLE_LZMA) $(BL21_BIN) $(BL22_LZMA) $(BL23_LZMA) | $(BUILD_DIR)
+# they have been folded into the final image. $(TRX) is listed as a real
+# dependency so any edit to tools/trx/* triggers a rebuild of the host
+# binary before it is re-invoked.
+$(BL2_BIN): $(FLASH_TABLE_LZMA) $(BL21_BIN) $(BL22_LZMA) $(BL23_LZMA) $(TRX) | $(BUILD_DIR)
 	@echo "  TRX -z  $@"
 	$(Q)$(TRX) -z $(BL21_BIN) $(BL22_LZMA) $(BL23_LZMA) $(FLASH_TABLE_LZMA) $(BL2_BIN)
 	@echo "  TRX -x  $@ (CRC)"

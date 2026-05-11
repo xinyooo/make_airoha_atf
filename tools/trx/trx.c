@@ -146,7 +146,16 @@ int main(int argc, char **argv)
 	FILE *in2;
 	FILE *in3;
 	FILE *flash_table;
-	struct f_header_t f;
+	/*
+	 * Zero-initialise so the trailing fields (lzma_cmd, reserved) that
+	 * the trx -z path never assigns are guaranteed to be 0 in the on-disk
+	 * f_header. Otherwise stack garbage may leak in and BL21 misreads
+	 * lzma_cmd == 1, which makes bl2_plat_preload_setup_optimize jump
+	 * into the flash_table decompress branch from the very first stage,
+	 * decompressing garbage and resetting BL2_OPTIMIZE_STATUS, which
+	 * later corrupts the bl23 / flash_table decompression.
+	 */
+	struct f_header_t f = {0};
 	int input_size2;
 	int output_size;
 	int flash_table_size;
@@ -313,6 +322,15 @@ int main(int argc, char **argv)
 				f.lzma_src = 0x1e843c00 + sizeof(struct f_header_t);
 				f.lzma_length =output_size;
 				f.lzma_des = 0x08004000;
+				/*
+				 * BL21 (first decompress stage) expects lzma_cmd == 0;
+				 * BL22 sets lzma_cmd = 1 at runtime before re-entering
+				 * BL21 to trigger the flash_table decompress branch.
+				 * Force the on-disk value to 0 so a buggy uninitialised
+				 * stack can't make BL21 wrongly take that branch.
+				 */
+				f.lzma_cmd = 0;
+				f.reserved = 0;
 
 				n = fread(buf, 1, input_size+1, in);
 
