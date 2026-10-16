@@ -491,7 +491,6 @@ const struct SPI_NAND_FLASH_INFO_T spi_nand_flash_tables[] = {
 		extend_dev_id:				_SPI_NAND_DEVICE_ID_W25N01GV_EXTEND,
 	},
 
-#if 0
 	{
 		mfr_id:						_SPI_NAND_MANUFACTURER_ID_WINBOND,
 		dev_id:						_SPI_NAND_DEVICE_ID_W25N01KV,
@@ -516,7 +515,6 @@ const struct SPI_NAND_FLASH_INFO_T spi_nand_flash_tables[] = {
 #endif
 		extend_dev_id:				_SPI_NAND_DEVICE_ID_W25N01KV_EXTEND,
 	},
-#endif
 
 	{
 		mfr_id: 					_SPI_NAND_MANUFACTURER_ID_WINBOND,
